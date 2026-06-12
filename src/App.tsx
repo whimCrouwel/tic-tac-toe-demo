@@ -27,9 +27,17 @@ function useQrCode(text: string) {
   const [dataUrl, setDataUrl] = useState('')
   useEffect(() => {
     if (!text) return
-    QRCode.toDataURL(text, { width: 200, margin: 1 }).then(setDataUrl)
+    QRCode.toDataURL(text, { width: 200, margin: 2, color: { dark: '#000', light: '#fff' } }).then(setDataUrl)
   }, [text])
   return dataUrl
+}
+
+const CENTER: React.CSSProperties = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 16,
 }
 
 export default function App() {
@@ -96,15 +104,14 @@ export default function App() {
     }))
 
     unsubs.push(socket.on('presence', (msg) => {
-      const nickname = msg.nickname as string
+      const name = msg.nickname as string
       const event = msg.event as string
       if (event === 'join' || event === 'reconnect') {
         if (screen === 'waiting') setScreen('game')
-        if (event === 'reconnect') showNotification(`${nickname} reconnected`)
+        if (event === 'reconnect') showNotification(`${name} reconnected`)
       }
-      if (event === 'disconnect') showNotification(`${nickname} disconnected`)
-      if (event === 'leave') showNotification(`${nickname} left the game`)
-      if (event === 'kick') showNotification(`${nickname} was kicked`)
+      if (event === 'disconnect') showNotification(`${name} disconnected`)
+      if (event === 'leave') showNotification(`${name} left the game`)
     }))
 
     unsubs.push(socket.on('move', (msg) => {
@@ -115,9 +122,7 @@ export default function App() {
       if (payload.reset) {
         const fresh: GameState = { board: Array(9).fill(null), xIsNext: true, winner: null }
         setGame(fresh)
-        if (isHostRef.current) {
-          socket.sendWithReqId({ type: 'snapshot.set', seq, state: fresh })
-        }
+        if (isHostRef.current) socket.sendWithReqId({ type: 'snapshot.set', seq, state: fresh })
         return
       }
 
@@ -127,9 +132,7 @@ export default function App() {
         board[payload.cell!] = prev.xIsNext ? 'X' : 'O'
         const winner = calcWinner(board)
         const next = { board, xIsNext: !prev.xIsNext, winner }
-        if (isHostRef.current) {
-          socket.sendWithReqId({ type: 'snapshot.set', seq, state: next })
-        }
+        if (isHostRef.current) socket.sendWithReqId({ type: 'snapshot.set', seq, state: next })
         return next
       })
     }))
@@ -149,14 +152,12 @@ export default function App() {
     if (!nickname.trim()) { setError('Enter a nickname'); return }
     if (!creating && !joinCode.trim()) { setError('Enter a join code'); return }
     setError('')
-
     try {
       await socket.connect(nickname.trim())
     } catch {
       setError('Cannot connect to server')
       return
     }
-
     if (creating) {
       socket.sendWithReqId({ type: 'room.create' })
     } else {
@@ -175,184 +176,125 @@ export default function App() {
     socket.sendWithReqId({ type: 'move', payload: { reset: true } })
   }
 
+  // ── Lobby ────────────────────────────────────────────────────────────────
   if (screen === 'lobby') {
     return (
-      <div style={styles.center}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>Tic-Tac-Toe</h1>
+      <div style={CENTER}>
+        {notification && <div className="toast">{notification}</div>}
+        <div className="card">
+          <p className="logo">boardgame-ws demo</p>
+          <h1 className="title">Tic-Tac-Toe</h1>
+
           <input
-            style={styles.input}
+            className="input"
             placeholder="Your nickname"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
           />
           <input
-            style={styles.input}
-            placeholder="Join code (leave blank to create)"
+            className="input"
+            placeholder="Join code — leave blank to create"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
+            style={{ fontFamily: joinCode ? 'monospace' : 'inherit', letterSpacing: joinCode ? 4 : 0 }}
           />
+
           {roomStatus && (
-            <p style={{ textAlign: 'center', fontSize: 13, color: roomStatus.available === 0 ? '#c00' : '#888', marginBottom: 8 }}>
+            <p className={`status-line${roomStatus.available === 0 ? ' error' : ''}`}>
               {roomStatus.available === 0
                 ? 'Server is full — no rooms available'
-                : `${roomStatus.available} of ${roomStatus.max} rooms available`}
+                : `${roomStatus.available} of ${roomStatus.max} rooms open`}
             </p>
           )}
-          {error && <p style={styles.error}>{error}</p>}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={styles.btn} onClick={() => handleConnect(true)}>Create Room</button>
-            <button style={styles.btnSecondary} onClick={() => handleConnect(false)}>Join Room</button>
+          {error && <p className="error-msg">{error}</p>}
+
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={() => handleConnect(true)}>Create Room</button>
+            <button className="btn btn-ghost" onClick={() => handleConnect(false)}>Join</button>
           </div>
         </div>
       </div>
     )
   }
 
+  // ── Waiting ──────────────────────────────────────────────────────────────
   if (screen === 'waiting') {
     return (
-      <div style={styles.center}>
-        <div style={styles.card}>
-          <h2 style={styles.title}>Waiting for opponent…</h2>
-          <p style={{ textAlign: 'center', marginBottom: 12, color: '#555' }}>Scan to join:</p>
+      <div style={CENTER}>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <div className="spinner" />
+          <h2 className="title" style={{ marginBottom: 4 }}>Waiting for opponent</h2>
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 24 }}>
+            Share the code or scan the QR
+          </p>
+
           {qrDataUrl && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-              <img src={qrDataUrl} alt="Join QR code" width={200} height={200} />
+            <div className="qr-wrap">
+              <img src={qrDataUrl} alt="Join QR" width={180} height={180} />
             </div>
           )}
-          <div style={styles.code}>{roomCode}</div>
-          <p style={{ textAlign: 'center', color: '#888', fontSize: 14 }}>You are X</p>
+
+          <p className="room-label">Room code</p>
+          <div className="room-code">{roomCode}</div>
+
+          <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+            You are <span className="mark-badge x">X</span>
+          </p>
         </div>
       </div>
     )
   }
 
+  // ── Game ─────────────────────────────────────────────────────────────────
   const myTurn = (game.xIsNext && myMark === 'X') || (!game.xIsNext && myMark === 'O')
-  const status = game.winner
-    ? `${game.winner} wins!`
-    : game.board.every(Boolean)
-    ? 'Draw!'
-    : myTurn
-    ? 'Your turn'
-    : "Opponent's turn"
+  const isDraw = !game.winner && game.board.every(Boolean)
+  const isOver = !!game.winner || isDraw
 
   return (
-    <div style={styles.center}>
-      <div style={styles.card}>
-        {notification && <div style={styles.notification}>{notification}</div>}
-        <h2 style={styles.title}>Room: {roomCode}</h2>
-        <p style={{ textAlign: 'center', marginBottom: 12 }}>
-          You are <strong>{myMark}</strong> — {status}
-        </p>
-        <div style={styles.grid}>
+    <div style={CENTER}>
+      {notification && <div className="toast">{notification}</div>}
+      <div className="card">
+        <p className="room-label" style={{ marginBottom: 2 }}>Room · {roomCode}</p>
+
+        {isOver ? (
+          <p className="result-banner" style={{ margin: '12px 0 0' }}>
+            {game.winner ? `${game.winner} wins!` : 'Draw!'}
+          </p>
+        ) : (
+          <div className="turn-indicator" style={{ margin: '12px 0 0' }}>
+            {myTurn && <span className="turn-dot" />}
+            <span>
+              {myTurn ? 'Your turn' : "Opponent's turn"}
+            </span>
+            <span className={`mark-badge ${myMark.toLowerCase()}`}>{myMark}</span>
+          </div>
+        )}
+
+        <div className="board">
           {game.board.map((val, i) => (
             <button
               key={i}
-              style={{ ...styles.cell, cursor: val || game.winner ? 'default' : 'pointer' }}
+              className={`cell${val ? ` filled ${val.toLowerCase()}` : ''}${isOver ? ' done' : ''}`}
               onClick={() => handleCellClick(i)}
             >
               {val}
             </button>
           ))}
         </div>
-        {(game.winner || game.board.every(Boolean)) && isHost && (
-          <button style={{ ...styles.btn, marginTop: 16, width: '100%' }} onClick={handleReset}>
+
+        {isOver && isHost && (
+          <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleReset}>
             Play Again
           </button>
+        )}
+        {isOver && !isHost && (
+          <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>
+            Waiting for host to restart…
+          </p>
         )}
       </div>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  center: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#f9f9f9',
-  },
-  card: {
-    background: '#fff',
-    borderRadius: 12,
-    padding: 32,
-    boxShadow: '0 2px 16px rgba(0,0,0,0.10)',
-    width: 360,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 20,
-    fontSize: 24,
-    fontWeight: 700,
-  },
-  input: {
-    display: 'block',
-    width: '100%',
-    marginBottom: 12,
-    padding: '10px 12px',
-    fontSize: 15,
-    border: '1px solid #ddd',
-    borderRadius: 8,
-    boxSizing: 'border-box',
-  },
-  error: {
-    color: '#c00',
-    fontSize: 13,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  notification: {
-    background: '#fff3cd',
-    color: '#856404',
-    borderRadius: 8,
-    padding: '8px 12px',
-    marginBottom: 12,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  btn: {
-    flex: 1,
-    padding: '10px 0',
-    background: '#111',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 15,
-    fontWeight: 600,
-  },
-  btnSecondary: {
-    flex: 1,
-    padding: '10px 0',
-    background: '#fff',
-    color: '#111',
-    border: '1px solid #ddd',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 15,
-    fontWeight: 600,
-  },
-  code: {
-    fontSize: 36,
-    fontWeight: 800,
-    letterSpacing: 8,
-    textAlign: 'center',
-    fontFamily: 'monospace',
-    marginBottom: 8,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: 8,
-    marginBottom: 4,
-  },
-  cell: {
-    height: 88,
-    fontSize: 36,
-    fontWeight: 700,
-    background: '#f3f3f3',
-    border: '1px solid #ddd',
-    borderRadius: 8,
-  },
 }
