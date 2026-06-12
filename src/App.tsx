@@ -108,10 +108,10 @@ export default function App() {
       const event = msg.event as string
       if (event === 'join' || event === 'reconnect') {
         if (screen === 'waiting') setScreen('game')
-        if (event === 'reconnect') showNotification(`${name} reconnected`)
+        if (event === 'reconnect') showNotification(`${name} が再接続しました`)
       }
-      if (event === 'disconnect') showNotification(`${name} disconnected`)
-      if (event === 'leave') showNotification(`${name} left the game`)
+      if (event === 'disconnect') showNotification(`${name} が切断されました`)
+      if (event === 'leave') showNotification(`${name} がゲームを離れました`)
     }))
 
     unsubs.push(socket.on('move', (msg) => {
@@ -149,13 +149,13 @@ export default function App() {
   }, [screen, applySnapshot, showNotification])
 
   async function handleConnect(creating: boolean) {
-    if (!nickname.trim()) { setError('Enter a nickname'); return }
-    if (!creating && !joinCode.trim()) { setError('Enter a join code'); return }
+    if (!nickname.trim()) { setError('ニックネームを入力してください'); return }
+    if (!creating && !joinCode.trim()) { setError('参加コードを入力してください'); return }
     setError('')
     try {
       await socket.connect(nickname.trim())
     } catch {
-      setError('Cannot connect to server')
+      setError('サーバーに接続できません')
       return
     }
     if (creating) {
@@ -187,14 +187,14 @@ export default function App() {
 
           <input
             className="input"
-            placeholder="Your nickname"
+            placeholder="ニックネーム"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
           />
           <input
             className="input"
-            placeholder="Join code — leave blank to create"
+            placeholder="参加コード（空欄でルーム作成）"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
@@ -204,15 +204,15 @@ export default function App() {
           {roomStatus && (
             <p className={`status-line${roomStatus.available === 0 ? ' error' : ''}`}>
               {roomStatus.available === 0
-                ? 'Server is full — no rooms available'
-                : `${roomStatus.available} of ${roomStatus.max} rooms open`}
+                ? 'サーバーが満室です'
+                : `空きルーム ${roomStatus.available} / ${roomStatus.max}`}
             </p>
           )}
           {error && <p className="error-msg">{error}</p>}
 
           <div className="btn-row">
-            <button className="btn btn-primary" onClick={() => handleConnect(true)}>Create Room</button>
-            <button className="btn btn-ghost" onClick={() => handleConnect(false)}>Join</button>
+            <button className="btn btn-primary" onClick={() => handleConnect(true)}>ルーム作成</button>
+            <button className="btn btn-ghost" onClick={() => handleConnect(false)}>参加する</button>
           </div>
         </div>
       </div>
@@ -225,9 +225,9 @@ export default function App() {
       <div style={CENTER}>
         <div className="card" style={{ textAlign: 'center' }}>
           <div className="spinner" />
-          <h2 className="title" style={{ marginBottom: 4 }}>Waiting for opponent</h2>
+          <h2 className="title" style={{ marginBottom: 4 }}>相手を待っています</h2>
           <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 24 }}>
-            Share the code or scan the QR
+            コードをシェアするか、QR をスキャン
           </p>
 
           {qrDataUrl && (
@@ -236,11 +236,11 @@ export default function App() {
             </div>
           )}
 
-          <p className="room-label">Room code</p>
+          <p className="room-label">ルームコード</p>
           <div className="room-code">{roomCode}</div>
 
           <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-            You are <span className="mark-badge x">X</span>
+            あなたは <span className="mark-badge x">X</span>
           </p>
         </div>
       </div>
@@ -256,17 +256,17 @@ export default function App() {
     <div style={CENTER}>
       {notification && <div className="toast">{notification}</div>}
       <div className="card">
-        <p className="room-label" style={{ marginBottom: 2 }}>Room · {roomCode}</p>
+        <p className="room-label" style={{ marginBottom: 2 }}>ルーム · {roomCode}</p>
 
         {isOver ? (
           <p className="result-banner" style={{ margin: '12px 0 0' }}>
-            {game.winner ? `${game.winner} wins!` : 'Draw!'}
+            {game.winner ? `${game.winner} の勝ち！` : '引き分け！'}
           </p>
         ) : (
           <div className="turn-indicator" style={{ margin: '12px 0 0' }}>
             {myTurn && <span className="turn-dot" />}
             <span>
-              {myTurn ? 'Your turn' : "Opponent's turn"}
+              {myTurn ? 'あなたのターン' : '相手のターン'}
             </span>
             <span className={`mark-badge ${myMark.toLowerCase()}`}>{myMark}</span>
           </div>
@@ -286,12 +286,12 @@ export default function App() {
 
         {isOver && isHost && (
           <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleReset}>
-            Play Again
+            もう一度
           </button>
         )}
         {isOver && !isHost && (
           <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>
-            Waiting for host to restart…
+            ホストの再開を待っています…
           </p>
         )}
       </div>
