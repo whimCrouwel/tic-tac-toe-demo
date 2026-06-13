@@ -32,12 +32,41 @@ function useQrCode(text: string) {
   return dataUrl
 }
 
-const CENTER: React.CSSProperties = {
-  minHeight: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 16,
+const GITHUB_URL = 'https://github.com/whimCrouwel/boardgame-ws'
+const AUTHOR_URL = 'https://whim-on-vim.com'
+
+function Header() {
+  return (
+    <header className="header">
+      <a className="header-logo" href={GITHUB_URL} target="_blank" rel="noreferrer">
+        boardgame-ws
+      </a>
+      <nav className="header-links">
+        <a className="header-link" href={AUTHOR_URL} target="_blank" rel="noreferrer">
+          whim-on-vim.com
+        </a>
+        <a className="header-link" href={GITHUB_URL} target="_blank" rel="noreferrer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          GitHub
+        </a>
+      </nav>
+    </header>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <p className="footer-text">
+        © 2026 <a className="footer-link" href={AUTHOR_URL} target="_blank" rel="noreferrer">whim-on-vim.com</a>
+      </p>
+      <a className="footer-link" href={GITHUB_URL} target="_blank" rel="noreferrer">
+        boardgame-ws — MIT License
+      </a>
+    </footer>
+  )
 }
 
 export default function App() {
@@ -179,42 +208,66 @@ export default function App() {
   // ── Lobby ────────────────────────────────────────────────────────────────
   if (screen === 'lobby') {
     return (
-      <div style={CENTER}>
+      <div className="page">
+        <Header />
         {notification && <div className="toast">{notification}</div>}
-        <div className="card">
-          <p className="logo">boardgame-ws demo</p>
-          <h1 className="title">Tic-Tac-Toe</h1>
 
-          <input
-            className="input"
-            placeholder="ニックネーム"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
-          />
-          <input
-            className="input"
-            placeholder="参加コード（空欄でルーム作成）"
-            value={joinCode}
-            onChange={(e) => setJoinCode(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
-            style={{ fontFamily: joinCode ? 'monospace' : 'inherit', letterSpacing: joinCode ? 4 : 0 }}
-          />
+        <section className="hero">
+          <div className="hero-eyebrow">WebSocket Server SDK</div>
+          <h1 className="hero-title">リアルタイム対戦を<br />かんたんに。</h1>
+          <p className="hero-desc">
+            <code style={{ color: '#a5b4fc', fontFamily: 'monospace' }}>boardgame-ws</code> は、
+            ターン制マルチプレイヤーゲームのための Node.js WebSocket サーバー SDK です。
+            ルーム管理・順序保証・再接続リカバリーが数行で使えます。
+          </p>
+          <div className="hero-badges">
+            <span className="badge">ルームコードで招待</span>
+            <span className="badge">再接続サポート</span>
+            <span className="badge">スナップショット同期</span>
+            <span className="badge">ゲームロジック不要</span>
+            <span className="badge">TypeScript 完全対応</span>
+          </div>
+          <p className="demo-label">デモを試す</p>
+        </section>
 
-          {roomStatus && (
-            <p className={`status-line${roomStatus.available === 0 ? ' error' : ''}`}>
-              {roomStatus.available === 0
-                ? 'サーバーが満室です'
-                : `空きルーム ${roomStatus.available} / ${roomStatus.max}`}
-            </p>
-          )}
-          {error && <p className="error-msg">{error}</p>}
+        <div className="demo">
+          <div className="card">
+            <p className="logo">Tic-Tac-Toe — Live Demo</p>
+            <h2 className="title">三目並べ</h2>
 
-          <div className="btn-row">
-            <button className="btn btn-primary" onClick={() => handleConnect(true)}>ルーム作成</button>
-            <button className="btn btn-ghost" onClick={() => handleConnect(false)}>参加する</button>
+            <input
+              className="input"
+              placeholder="ニックネーム"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
+            />
+            <input
+              className="input"
+              placeholder="参加コード（空欄でルーム作成）"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConnect(!joinCode)}
+              style={{ fontFamily: joinCode ? 'monospace' : 'inherit', letterSpacing: joinCode ? 4 : 0 }}
+            />
+
+            {roomStatus && (
+              <p className={`status-line${roomStatus.available === 0 ? ' error' : ''}`}>
+                {roomStatus.available === 0
+                  ? 'サーバーが満室です'
+                  : `空きルーム ${roomStatus.available} / ${roomStatus.max}`}
+              </p>
+            )}
+            {error && <p className="error-msg">{error}</p>}
+
+            <div className="btn-row">
+              <button className="btn btn-primary" onClick={() => handleConnect(true)}>ルーム作成</button>
+              <button className="btn btn-ghost" onClick={() => handleConnect(false)}>参加する</button>
+            </div>
           </div>
         </div>
+
+        <Footer />
       </div>
     )
   }
@@ -222,7 +275,9 @@ export default function App() {
   // ── Waiting ──────────────────────────────────────────────────────────────
   if (screen === 'waiting') {
     return (
-      <div style={CENTER}>
+      <div className="page">
+        <Header />
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 24px' }}>
         <div className="card" style={{ textAlign: 'center' }}>
           <div className="spinner" />
           <h2 className="title" style={{ marginBottom: 4 }}>相手を待っています</h2>
@@ -243,6 +298,8 @@ export default function App() {
             あなたは <span className="mark-badge x">X</span>
           </p>
         </div>
+        </div>
+        <Footer />
       </div>
     )
   }
@@ -253,8 +310,10 @@ export default function App() {
   const isOver = !!game.winner || isDraw
 
   return (
-    <div style={CENTER}>
+    <div className="page">
+      <Header />
       {notification && <div className="toast">{notification}</div>}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 24px' }}>
       <div className="card">
         <p className="room-label" style={{ marginBottom: 2 }}>ルーム · {roomCode}</p>
 
@@ -295,6 +354,8 @@ export default function App() {
           </p>
         )}
       </div>
+      </div>
+      <Footer />
     </div>
   )
 }
