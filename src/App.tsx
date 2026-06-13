@@ -293,9 +293,26 @@ export default function App() {
           <p className="room-label">ルームコード</p>
           <div className="room-code">{roomCode}</div>
 
-          <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
             あなたは <span className="mark-badge x">X</span>
           </p>
+
+          {joinUrl && (
+            <a
+              className="btn btn-ghost"
+              href={joinUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              別タブで開いてテスト
+            </a>
+          )}
         </div>
         </div>
         <Footer />
