@@ -233,7 +233,6 @@ export default function App() {
         <div className="demo">
           <div className="card">
             <p className="logo">Tic-Tac-Toe — Live Demo</p>
-            <h2 className="title">三目並べ</h2>
 
             <input
               className="input"
